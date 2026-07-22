@@ -1,0 +1,2 @@
+ALTER TABLE groups ADD COLUMN invite_token VARCHAR(255) UNIQUE;
+ALTER TABLE groups ADD COLUMN invite_expires_at TIMESTAMP;

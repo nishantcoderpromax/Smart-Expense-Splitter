@@ -1,0 +1,85 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+@theme {
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+:root {
+  --color-ink: #1B2430;
+  --color-ink-soft: #5B6472;
+  --color-paper: #F7F3EB;
+  --color-surface: #FFFFFF;
+  --color-rule: #DDD6C6;
+  --color-green: #1F7A5C;
+  --color-green-bg: #E7F2EC;
+  --color-red: #B23A2E;
+  --color-red-bg: #FBEBE9;
+  --color-brass: #B8892B;
+  --color-brass-dark: #96700F;
+
+  --bg-glow-1: rgba(184, 137, 43, 0.10);
+  --bg-glow-2: rgba(31, 122, 92, 0.06);
+  --bg-grain: rgba(27, 36, 48, 0.015);
+}
+
+[data-theme="dark"] {
+  --color-ink: #EDEAE2;
+  --color-ink-soft: #A9A79E;
+  --color-paper: #1C1917;
+  --color-surface: #262220;
+  --color-rule: #3A352C;
+  --color-green: #4CC79A;
+  --color-green-bg: rgba(76, 199, 154, 0.15);
+  --color-red: #E2756B;
+  --color-red-bg: rgba(226, 117, 107, 0.15);
+  --color-brass: #E0B15C;
+  --color-brass-dark: #C99A3E;
+
+  --bg-glow-1: rgba(224, 177, 92, 0.08);
+  --bg-glow-2: rgba(76, 199, 154, 0.05);
+  --bg-grain: rgba(255, 255, 255, 0.02);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  /* Realistic layered "paper desk" background: soft top-light + faint grain lines + warm base */
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -10%, var(--bg-glow-1), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 0%, var(--bg-glow-2), transparent 55%),
+    repeating-linear-gradient(135deg, var(--bg-grain) 0px, var(--bg-grain) 1px, transparent 1px, transparent 8px);
+  background-attachment: fixed;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+a { color: var(--color-brass-dark); text-decoration: none; transition: color 0.15s ease; }
+a:hover { color: var(--color-ink); }
+
+::selection { background: rgba(184, 137, 43, 0.25); }
+
+/* Money / ledger signature element, reused across MUI components */
+.amount-tag {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+  transition: transform 0.15s ease;
+}
+.amount-tag.positive { color: var(--color-green); background: var(--color-green-bg); }
+.amount-tag.negative { color: var(--color-red); background: var(--color-red-bg); }
+.amount-tag.neutral { color: var(--color-ink-soft); background: var(--color-rule); }
