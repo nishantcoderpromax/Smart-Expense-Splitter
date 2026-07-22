@@ -2,6 +2,7 @@ package com.splitter.config;
 
 import com.splitter.security.JwtHandshakeInterceptor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -23,11 +24,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
  
     private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
  
+    @Value("${app.allowed-origins}")
+    private String allowedOrigins;
+ 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .addInterceptors(jwtHandshakeInterceptor)
-                .setAllowedOrigins("http://localhost:5173", "http://localhost:4173") // dev server + preview server
+                .setAllowedOrigins(allowedOrigins.split(","))
                 .withSockJS();
     }
  

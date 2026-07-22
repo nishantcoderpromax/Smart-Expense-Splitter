@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { useAuthStore } from "../store/authStore";
+import { API_BASE_URL } from "../api/apiConfig";
 
 /**
  * Subscribes to any STOMP topic for the lifetime of the component. The server
@@ -15,7 +16,7 @@ export function useTopicSocket(topic, onEvent) {
 
     const token = useAuthStore.getState().accessToken;
     const client = new Client({
-      webSocketFactory: () => new SockJS(`http://localhost:8080/ws?token=${encodeURIComponent(token)}`),
+      webSocketFactory: () => new SockJS(`${API_BASE_URL}/ws?token=${encodeURIComponent(token)}`),
       reconnectDelay: 5000,
       onConnect: () => {
         client.subscribe(topic, (message) => {

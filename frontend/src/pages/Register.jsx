@@ -8,6 +8,7 @@ import GoogleIcon from "@mui/icons-material/Google";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import { useThemeStore } from "../store/themeStore";
+import { API_BASE_URL } from "../api/apiConfig";
 
 export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -84,7 +85,7 @@ export default function Register() {
           variant="outlined"
           size="large"
           startIcon={<GoogleIcon />}
-          onClick={() => { window.location.href = "http://localhost:8080/oauth2/authorization/google"; }}
+          onClick={() => { window.location.href = `${API_BASE_URL}/oauth2/authorization/google`; }}
           sx={{
             borderColor: "var(--color-rule)", color: "var(--color-ink)",
             "&:hover": { borderColor: "var(--color-brass)", bgcolor: "rgba(184,137,43,0.06)" },

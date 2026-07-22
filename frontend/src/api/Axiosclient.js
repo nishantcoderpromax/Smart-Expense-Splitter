@@ -1,8 +1,9 @@
 import axios from "axios";
 import { useAuthStore } from "../store/authStore";
+import { API_BASE_URL } from "./apiConfig";
  
 const axiosClient = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: API_BASE_URL,
 });
  
 // Attach access token to every request
@@ -21,7 +22,7 @@ function refreshAccessToken() {
   if (!refreshPromise) {
     const refreshToken = useAuthStore.getState().refreshToken;
     refreshPromise = axios
-      .post("http://localhost:8080/auth/refresh", { refreshToken })
+      .post(`${API_BASE_URL}`, { refreshToken })
       .then(({ data }) => {
         useAuthStore.getState().setAuth(data);
         return data;
