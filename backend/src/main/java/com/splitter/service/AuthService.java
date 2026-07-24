@@ -10,35 +10,38 @@ import com.splitter.repository.RefreshTokenRepository;
 import com.splitter.repository.UserRepository;
 import com.splitter.repository.VerificationTokenRepository;
 import com.splitter.security.JwtUtil;
-
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
-
+ 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
+ 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class AuthService {
-
+ 
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+ 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
-
+ 
     @Value("${jwt.refresh-token-expiry-ms}")
     private long refreshTokenExpiryMs;
-
+ 
     @Value("${app.frontend-url}")
     private String frontendUrl;
-
+ 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ApiException(HttpStatus.CONFLICT, "Email already registered");
@@ -50,28 +53,35 @@ public class AuthService {
                 .emailVerified(false) // explicit: overrides the entity's default(true) for real registrations
                 .build();
         userRepository.save(user);
-
-        issueAndSendVerificationEmail(user);
-
+ 
+        // A slow/misconfigured/blocked SMTP server should never prevent account
+        // creation itself — sign-up succeeds regardless; if the email genuinely
+        // fails, the person can just use "Resend verification email" later.
+        try {
+            issueAndSendVerificationEmail(user);
+        } catch (Exception e) {
+            log.warn("Could not send verification email to {}: {}", user.getEmail(), e.getMessage());
+        }
+ 
         // Registration still logs the user in immediately — verification is
         // tracked/shown in the UI, but doesn't block using the app.
         return buildAuthResponse(user);
     }
-
+ 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
-
+ 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
         return buildAuthResponse(user);
     }
-
+ 
     public AuthResponse refresh(RefreshRequest request) {
         RefreshToken stored = refreshTokenRepository.findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
-
+ 
         if (stored.getExpiryDate().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(stored);
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Refresh token expired, please log in again");
@@ -80,11 +90,11 @@ public class AuthService {
         refreshTokenRepository.delete(stored);
         return buildAuthResponse(stored.getUser());
     }
-
+ 
     public void logout(String refreshToken) {
         refreshTokenRepository.deleteByToken(refreshToken);
     }
-
+ 
     /**
      * Finds an existing account by email, or creates one for a first-time Google
      * sign-in. OAuth users never use a password to log in, but the users.password
@@ -103,37 +113,37 @@ public class AuthService {
                     return userRepository.save(user);
                 });
     }
-
+ 
     // ---------- Email verification ----------
-
+ 
     public void verifyEmail(String token) {
         VerificationToken vt = verificationTokenRepository.findByTokenAndPurpose(token, TokenPurpose.EMAIL_VERIFICATION)
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid verification link"));
-
+ 
         if (vt.isUsed() || vt.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "This verification link has expired or was already used");
         }
-
+ 
         User user = vt.getUser();
         user.setEmailVerified(true);
         userRepository.save(user);
-
+ 
         vt.setUsed(true);
         verificationTokenRepository.save(vt);
     }
-
+ 
     public void resendVerificationEmail(String currentUserEmail) {
         User user = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "User not found"));
-
+ 
         if (user.isEmailVerified()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "This email is already verified");
         }
-
+ 
         verificationTokenRepository.deleteByUserIdAndPurpose(user.getId(), TokenPurpose.EMAIL_VERIFICATION);
         issueAndSendVerificationEmail(user);
     }
-
+ 
     private void issueAndSendVerificationEmail(User user) {
         String token = UUID.randomUUID().toString();
         verificationTokenRepository.save(VerificationToken.builder()
@@ -142,19 +152,19 @@ public class AuthService {
                 .purpose(TokenPurpose.EMAIL_VERIFICATION)
                 .expiryDate(LocalDateTime.now().plusHours(24))
                 .build());
-
+ 
         String link = frontendUrl + "/verify-email?token=" + token;
         emailService.sendVerificationEmail(user.getEmail(), link);
     }
-
+ 
     // ---------- Password reset ----------
-
+ 
     /** Always behaves identically whether or not the email exists, so callers
      *  can't use this endpoint to discover which emails are registered. */
     public void forgotPassword(String email) {
         userRepository.findByEmail(email).ifPresent(user -> {
             verificationTokenRepository.deleteByUserIdAndPurpose(user.getId(), TokenPurpose.PASSWORD_RESET);
-
+ 
             String token = UUID.randomUUID().toString();
             verificationTokenRepository.save(VerificationToken.builder()
                     .user(user)
@@ -162,43 +172,43 @@ public class AuthService {
                     .purpose(TokenPurpose.PASSWORD_RESET)
                     .expiryDate(LocalDateTime.now().plusMinutes(30))
                     .build());
-
+ 
             String link = frontendUrl + "/reset-password?token=" + token;
             emailService.sendPasswordResetEmail(user.getEmail(), link);
         });
     }
-
+ 
     public void resetPassword(String token, String newPassword) {
         VerificationToken vt = verificationTokenRepository.findByTokenAndPurpose(token, TokenPurpose.PASSWORD_RESET)
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired reset link"));
-
+ 
         if (vt.isUsed() || vt.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "This reset link has expired or was already used");
         }
-
+ 
         User user = vt.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-
+ 
         vt.setUsed(true);
         verificationTokenRepository.save(vt);
-
+ 
         // force re-login on every device — a leaked/reused reset link shouldn't
         // leave old sessions valid after the password has changed
         refreshTokenRepository.deleteByUserId(user.getId());
     }
-
+ 
     /** Public so OAuth2LoginSuccessHandler can issue the same JWT/refresh-token pair. */
     public AuthResponse buildAuthResponse(User user) {
         String accessToken = jwtUtil.generateAccessToken(user.getEmail());
-
+ 
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
                 .user(user)
                 .expiryDate(LocalDateTime.now().plusNanos(refreshTokenExpiryMs * 1_000_000))
                 .build();
         refreshTokenRepository.save(refreshToken);
-
+ 
         return new AuthResponse(accessToken, refreshToken.getToken(), user.getName(), user.getEmail());
     }
 }
