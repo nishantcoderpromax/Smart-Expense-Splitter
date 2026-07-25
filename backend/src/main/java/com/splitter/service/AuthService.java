@@ -27,6 +27,8 @@ import java.util.UUID;
 @Transactional
 public class AuthService {
  
+    public class AuthService {
+ 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
  
     private final UserRepository userRepository;
@@ -141,7 +143,14 @@ public class AuthService {
         }
  
         verificationTokenRepository.deleteByUserIdAndPurpose(user.getId(), TokenPurpose.EMAIL_VERIFICATION);
-        issueAndSendVerificationEmail(user);
+ 
+        try {
+            issueAndSendVerificationEmail(user);
+        } catch (Exception e) {
+            log.warn("Could not resend verification email to {}: {}", user.getEmail(), e.getMessage());
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Could not send the email right now. Please try again in a moment.");
+        }
     }
  
     private void issueAndSendVerificationEmail(User user) {
@@ -174,7 +183,14 @@ public class AuthService {
                     .build());
  
             String link = frontendUrl + "/reset-password?token=" + token;
-            emailService.sendPasswordResetEmail(user.getEmail(), link);
+            try {
+                emailService.sendPasswordResetEmail(user.getEmail(), link);
+            } catch (Exception e) {
+                log.warn("Could not send password reset email to {}: {}", user.getEmail(), e.getMessage());
+                // deliberately swallowed — this endpoint always responds the same way
+                // regardless of outcome, so it never reveals whether the email exists
+                // or whether sending succeeded
+            }
         });
     }
  
@@ -211,4 +227,5 @@ public class AuthService {
  
         return new AuthResponse(accessToken, refreshToken.getToken(), user.getName(), user.getEmail());
     }
+}
 }
