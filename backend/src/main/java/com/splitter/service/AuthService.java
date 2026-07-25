@@ -27,7 +27,7 @@ import java.util.UUID;
 @Transactional
 public class AuthService {
  
-    public class AuthService {
+    
  
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
  
@@ -228,4 +228,4 @@ public class AuthService {
         return new AuthResponse(accessToken, refreshToken.getToken(), user.getName(), user.getEmail());
     }
 }
-}
+
