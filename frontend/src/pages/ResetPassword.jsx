@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { resetPassword } from "../api/authApi";
-import { Box, Paper, TextField, Button, Typography, Alert } from "@mui/material";
+import { Box, Paper, Button, Typography, Alert } from "@mui/material";
+import PasswordField from "../components/PasswordField";
 
 export default function ResetPassword() {
   const [params] = useSearchParams();

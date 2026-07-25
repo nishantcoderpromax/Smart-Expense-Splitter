@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchProfile, updateProfile } from "../api/userApi";
 import { resendVerification } from "../api/authApi";
 import { Box, Card, CardContent, Typography, TextField, Button, Alert, Stack, Avatar, Divider, Chip } from "@mui/material";
+import PasswordField from "../components/PasswordField";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
@@ -88,8 +89,8 @@ export default function Profile() {
               <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
 
               <Typography variant="subtitle2" color="text.secondary" sx={{ pt: 1 }}>Change Password (optional)</Typography>
-              <TextField label="Current password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} fullWidth />
-              <TextField label="New password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} fullWidth />
+              <PasswordField label="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+              <PasswordField label="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} showStrength />
 
               <Button type="submit" variant="contained" disabled={loading} startIcon={<SaveRoundedIcon />} sx={{ alignSelf: "flex-start" }}>
                 Save Changes

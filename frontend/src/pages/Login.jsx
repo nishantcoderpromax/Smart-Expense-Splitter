@@ -9,6 +9,7 @@ import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import { useThemeStore } from "../store/themeStore";
 import { API_BASE_URL } from "../api/apiConfig";
+import PasswordField from "../components/PasswordField";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -73,7 +74,7 @@ export default function Login() {
         <Typography variant="h5" sx={{ textAlign: "center" }}>Welcome back</Typography>
         {error && <Alert severity="error">{error}</Alert>}
         <TextField name="email" type="email" label="Email" value={form.email} onChange={handleChange} required fullWidth />
-        <TextField name="password" type="password" label="Password" value={form.password} onChange={handleChange} required fullWidth />
+        <PasswordField label="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
         <Button type="submit" variant="contained" color="primary" size="large" disabled={loading} startIcon={<LoginRoundedIcon />}>
           {loading ? "Logging in..." : "Log In"}
         </Button>

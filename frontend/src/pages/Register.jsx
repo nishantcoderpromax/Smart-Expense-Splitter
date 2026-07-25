@@ -9,6 +9,7 @@ import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import { useThemeStore } from "../store/themeStore";
 import { API_BASE_URL } from "../api/apiConfig";
+import PasswordField from "../components/PasswordField";
 
 export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -74,7 +75,13 @@ export default function Register() {
         {error && <Alert severity="error">{error}</Alert>}
         <TextField name="name" label="Name" value={form.name} onChange={handleChange} required fullWidth />
         <TextField name="email" type="email" label="Email" value={form.email} onChange={handleChange} required fullWidth />
-        <TextField name="password" type="password" label="Password (min 6 characters)" value={form.password} onChange={handleChange} required fullWidth />
+        <PasswordField
+          label="Password (min 6 characters)"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          showStrength
+          required
+        />
         <Button type="submit" variant="contained" color="primary" size="large" disabled={loading} startIcon={<PersonAddRoundedIcon />}>
           {loading ? "Creating account..." : "Create Account"}
         </Button>
